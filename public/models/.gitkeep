@@ -1,0 +1,2 @@
+# Drop your .glb files here: limb_01.glb through limb_08.glb
+# Missing files are skipped automatically — abstract fallback shapes will render instead.

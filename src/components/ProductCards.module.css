@@ -1,0 +1,91 @@
+.section {
+  position: relative;
+  padding: 130px 48px 110px;
+  background: #0a0a0f;
+  overflow: hidden;
+}
+
+/* Giant background section number */
+.sectionNumber {
+  position: absolute;
+  top: 30px;
+  left: 40px;
+  font-size: 220px;
+  font-weight: 700;
+  color: #e8e8f0;
+  opacity: 0.04;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  letter-spacing: -0.05em;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.heading {
+  font-size: 40px;
+  font-weight: 300;
+  color: #e8e8f0;
+  margin-bottom: 60px;
+  letter-spacing: -0.01em;
+}
+
+.heading::before {
+  content: '— ';
+  color: #f5c842;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+  margin-top: 80px;
+}
+
+.card {
+  background: #111114;
+  border-left: 3px solid #f5c842;
+  padding: 34px 30px;
+  opacity: 0;
+  transform: translateY(44px);
+}
+
+.cardIcon {
+  display: block;
+  font-size: 22px;
+  color: #f5c842;
+  margin-bottom: 14px;
+}
+
+.cardTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #e8e8f0;
+  margin-bottom: 12px;
+  letter-spacing: 0.01em;
+}
+
+.cardBody {
+  font-family: 'Heebo', sans-serif;
+  font-size: 14.5px;
+  color: #8888a4;
+  line-height: 1.85;
+  direction: rtl;
+  text-align: right;
+}
+
+@media (max-width: 700px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 80px 24px 80px;
+  }
+}
