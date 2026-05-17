@@ -161,7 +161,7 @@ export default function AppFlow() {
         <div className={styles.svgScroll}>
           <svg
             ref={svgRef}
-            viewBox="0 0 1300 950"
+            viewBox="0 0 1300 1100"
             xmlns="http://www.w3.org/2000/svg"
             width="100%"
             className={styles.diagram}
@@ -173,92 +173,91 @@ export default function AppFlow() {
             </defs>
 
             {/* ── Start Welcome ── */}
-            <Oval cx={800} cy={50} rx={140} ry={26} label="מסך פתיחה למערכת" />
+            <Oval cx={800} cy={60} rx={140} ry={26} label="מסך פתיחה למערכת" />
 
-            <Ln x1={750} y1={76} x2={250} y2={130} />
-            <text x={450} y={95} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">מסלול מטפל</text>
+            <Arr d="M 750,86 L 750,110 L 250,110 L 250,150" />
+            <text x={500} y={100} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">מסלול מטפל</text>
 
-            <Ln x1={800} y1={76} x2={800} y2={130} />
-            <text x={815} y={105} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">מסלול מטופל</text>
+            <Arr d="M 800,86 L 800,150" />
+            <text x={815} y={125} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">מסלול מטופל</text>
 
             {/* ════ Therapist Track (Center x=250) ════ */}
-            <OrangeBox x={150} y={130} w={200} h={60} label="התחברות " sublabel="אימות" />
-            
-            {/* Parallel Branches from Login */}
-            <Ln x1={250} y1={190} x2={140} y2={230} />
-            <Ln x1={250} y1={190} x2={360} y2={230} />
+            <OrangeBox x={150} y={150} w={200} h={60} label="התחברות " sublabel="אימות" />
 
-            <OrangeBox x={40} y={230} w={200} h={60} label="לוח בקרת מטופלים" sublabel="צפייה בכל המטופלים המשויכים" />
-            <OrangeBox x={260} y={230} w={200} h={60} label="ניהול תיק מטופל" sublabel="דוחות, נתונים, ותוכניות מרחוק" />
+            {/* Parallel Branches from Login */}
+            <Arr d="M 250,210 L 250,250 L 140,250 L 140,290" />
+            <Arr d="M 250,210 L 250,250 L 360,250 L 360,290" />
+
+            <OrangeBox x={40} y={290} w={200} h={60} label="לוח בקרת מטופלים" sublabel="צפייה בכל המטופלים המשויכים" />
+            <OrangeBox x={260} y={290} w={200} h={60} label="ניהול תיק מטופל" sublabel="דוחות, נתונים, ותוכניות מרחוק" />
 
             {/* ════ Patient Track Top (Center x=800) ════ */}
-            <Diamond cx={800} cy={160} w={160} h={60} label="פעם ראשונה במערכת?" />
+            <Diamond cx={800} cy={180} w={160} h={60} label="פעם ראשונה במערכת?" />
 
-            <Ln x1={720} y1={160} x2={690} y2={220} />
-            <text x={705} y={185} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">כן</text>
+            <Arr d="M 720,180 L 690,180 L 690,294" />
+            <text x={665} y={170} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">כן</text>
 
-            <Ln x1={880} y1={160} x2={910} y2={220} />
-            <text x={895} y={185} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">לא</text>
+            <Arr d="M 880,180 L 910,180 L 910,290" />
+            <text x={925} y={170} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">לא</text>
 
             {/* ════ First-Time (Center x=690) ════ */}
-            <GreenBox x={590} y={220} w={200} h={52} label="מסך יצירת פרופיל" sublabel="פרטים אישיים וסוג קטיעה" />
-            <Ln x1={690} y1={274} x2={690} y2={310} />
+            <GreenBox x={590} y={294} w={200} h={52} label="מסך יצירת פרופיל" sublabel="פרטים אישיים וסוג קטיעה" />
+            <Arr d="M 690,346 L 690,430" />
 
-            <Diamond cx={690} cy={340} w={150} h={60} label="בחירת מסלול" />
+            <Diamond cx={690} cy={460} w={150} h={60} label="בחירת מסלול" />
 
-            <Ln x1={615} y1={340} x2={450} y2={400} />
-            <text x={530} y={360} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">חוויה</text>
+            <Arr d="M 615,460 L 450,460 L 450,560" />
+            <text x={530} y={450} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">התנסות</text>
 
-            <Ln x1={765} y1={340} x2={910} y2={400} />
-            <text x={840} y={360} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">שיקום</text>
+            <Arr d="M 765,460 L 910,460 L 910,560" />
+            <text x={840} y={450} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">שיקום</text>
 
             {/* ════ Returning (Center x=910) ════ */}
-            <Diamond cx={910} cy={246} w={150} h={60} label="היסטוריית משתמש" />
+            <Diamond cx={910} cy={320} w={150} h={60} label="היסטוריית משתמש" />
 
-            <Ln x1={835} y1={246} x2={690} y2={400} />
-            <text x={760} y={310} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">חוויה</text>
+            <Arr d="M 835,320 L 800,320 L 800,520 L 690,520 L 690,560" />
+            <text x={745} y={510} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">התנסות</text>
 
-            <Ln x1={985} y1={246} x2={1150} y2={400} />
-            <text x={1060} y={310} fill="rgba(255,255,255,0.6)" fontSize="11" fontFamily="Inter,sans-serif">שיקום</text>
+            <Arr d="M 985,320 L 1150,320 L 1150,560" />
+            <text x={1060} y={310} fill="rgba(255,255,255,0.6)" fontSize="13" fontFamily="Inter,sans-serif">שיקום</text>
 
             {/* ════ C1: First Time Exp (Center x=450) ════ */}
-            <BlueBox x={360} y={400} w={180} h={54} label="ממשק יצירה ועיצוב" sublabel="בחירת גפה מקטלוג ויזואלי" />
-            <Ln x1={450} y1={454} x2={450} y2={490} />
+            <BlueBox x={360} y={560} w={180} h={54} label="ממשק יצירה ועיצוב" sublabel="בחירת גפה מקטלוג ויזואלי" />
+            <Arr d="M 450,614 L 450,660" />
 
-            <TealBox x={360} y={490} w={180} h={54} label=" MediaPipe / כיול אנטומי " sublabel="מיפוי שלד מבוסס ראייה ממוחשבת" />
-            <Ln x1={450} y1={544} x2={570} y2={600} />
+            <TealBox x={360} y={660} w={180} h={54} label=" MediaPipe / כיול אנטומי " sublabel="מיפוי שלד מבוסס ראייה ממוחשבת" />
+            <Arr d="M 450,714 L 450,740 L 570,740 L 570,780" />
 
             {/* ════ C2: Returning Exp (Center x=690) ════ */}
-            <BlueBox x={600} y={400} w={180} h={54} label="בחירת גפה קודמת או יצירת חדשה" />
-            <Ln x1={690} y1={454} x2={570} y2={600} />
+            <BlueBox x={600} y={560} w={180} h={54} label="בחירת גפה קודמת או יצירת חדשה" />
+            <Arr d="M 690,614 L 690,740 L 570,740 L 570,780" />
 
             {/* ════ Merge Exp (Center x=570) ════ */}
-            <PurpleBox x={470} y={600} w={200} h={54} label="תצוגת שכבה דיגיטלית" sublabel="השתקפות מרחבית בזמן אמת" />
-            <Ln x1={570} y1={654} x2={570} y2={700} />
-            <Oval cx={570} cy={720} rx={110} ry={26} label="סיום סשן" />
+            <PurpleBox x={470} y={780} w={200} h={54} label="תצוגת שכבה דיגיטלית" sublabel="השתקפות מרחבית בזמן אמת" />
+            <Arr d="M 570,834 L 570,894" />
+            <Oval cx={570} cy={920} rx={110} ry={26} label="סיום סשן" />
 
             {/* ════ C3: First Time Rehab (Center x=910) ════ */}
-            <BlueBox x={820} y={400} w={180} h={54} label="בחירת גפה ותוכנית" sublabel="עיצוב פרוטזה ויעדי אימון" />
-            <Ln x1={910} y1={454} x2={910} y2={490} />
+            <BlueBox x={820} y={560} w={180} h={54} label="בחירת גפה ותוכנית" sublabel="עיצוב פרוטזה ויעדי אימון" />
+            <Arr d="M 910,614 L 910,660" />
 
-            <TealBox x={820} y={490} w={180} h={54} label="כיול גוף ומציאות רבודה" sublabel="שכבת מיפוי שלד" />
-            <Ln x1={910} y1={544} x2={1030} y2={600} />
+            <TealBox x={820} y={660} w={180} h={54} label="כיול גוף ומציאות רבודה" sublabel="שכבת מיפוי שלד" />
+            <Arr d="M 910,714 L 910,740 L 1030,740 L 1030,780" />
 
             {/* ════ C4: Returning Rehab (Center x=1150) ════ */}
-            <BlueBox x={1060} y={400} w={180} h={54} label="המשך תוכנית" sublabel="דילוג ישירות לביצוע אימון" />
-            <Ln x1={1150} y1={454} x2={1030} y2={600} />
+            <BlueBox x={1060} y={560} w={180} h={54} label="המשך תוכנית" sublabel="דילוג ישירות לביצוע אימון" />
+            <Arr d="M 1150,614 L 1150,740 L 1030,740 L 1030,780" />
 
             {/* ════ Merge Rehab (Center x=1030) ════ */}
-            <PurpleBox x={910} y={600} w={240} h={64} label="ביצוע אימון פעיל" sublabel="משחוק AR ושליטה ללא מגע (NUI/VUI)" />
-            <Ln x1={1030} y1={664} x2={1030} y2={710} />
+            <PurpleBox x={910} y={780} w={240} h={64} label="ביצוע אימון פעיל" sublabel=" (NUI/VUI) ללא מגע AR" />
+            <Arr d="M 1030,844 L 1030,893" />
 
-            <CloudDB x={940} y={710} w={180} h={54} label="שמירת נתונים בתיק המטופל" />
-            <Ln x1={1030} y1={764} x2={1030} y2={810} />
-            <Oval cx={1030} cy={830} rx={110} ry={26} label="סיום סשן" />
+            <CloudDB x={940} y={893} w={180} h={54} label="שמירת נתונים בתיק המטופל" />
+            <Arr d="M 1030,947 L 1030,994" />
+            <Oval cx={1030} cy={1020} rx={110} ry={26} label="סיום סשן" />
 
             {/* ════ Cross-Track Link: Data Logging to Dashboard ════ */}
-            <Arr d="M 940,737 L 360,737 L 360,290" dashed color="#d87a3b" />
-
+            <Arr d="M 940,920 L 900,920 L 900,1060 L 320,1060 L 320,350" dashed color="#d87a3b" />
           </svg>
         </div>
       </div>

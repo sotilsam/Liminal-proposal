@@ -68,10 +68,10 @@ function Arrow({ x1, y1, x2, y2, dashed, color = 'rgba(255,255,255,0.3)', marker
 }
 
 function getRowsY(count) {
-  if (count === 4) return [70, 154, 238, 322]
-  if (count === 3) return [112, 196, 280]
-  if (count === 2) return [154, 238]
-  if (count === 1) return [196]
+  if (count === 4) return [80, 160, 240, 320]
+  if (count === 3) return [100, 200, 300]
+  if (count === 2) return [140, 260]
+  if (count === 1) return [200]
   return []
 }
 
