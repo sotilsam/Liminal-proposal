@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, Suspense, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useEnvironment } from '@react-three/drei'
 import { gsap } from 'gsap'
 import styles from './HeroScene.module.css'
 
@@ -18,13 +18,35 @@ class ModelErrorBoundary extends React.Component {
   }
 }
 
-function LimbModel({ path }) {
+function LimbModel({ path, brighten }) {
   const { scene } = useGLTF(path)
-  const cloned = useMemo(() => scene.clone(true), [scene])
+  const envMap = useEnvironment({ preset: 'studio' })
+
+  const cloned = useMemo(() => {
+    const c = scene.clone(true)
+    if (brighten) {
+      c.traverse(obj => {
+        if (obj.isMesh) {
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+          mats.forEach((mat, idx) => {
+            const m = mat.clone()
+            m.envMap = envMap
+            m.envMapIntensity = 2.0
+            m.needsUpdate = true
+            if (Array.isArray(obj.material)) obj.material[idx] = m
+            else obj.material = m
+          })
+        }
+      })
+    }
+    return c
+  }, [scene, brighten, envMap])
+
   return <primitive object={cloned} />
 }
 
 
+const DARK_MODELS = new Set([0, 5, 6, 11]) // limb_01, limb_06, limb_07, limb_12 (0-indexed)
 const COUNT = 12
 const SPACING = 4.5
 // 5 objects visible at a time; initial visible set is i=7..11, center at i=9 (worldX=0).
@@ -173,7 +195,7 @@ function Scene({ heroRef }) {
             </mesh>
             <ModelErrorBoundary>
               <Suspense fallback={null}>
-                <LimbModel path={modelPaths[i]} />
+                <LimbModel path={modelPaths[i]} brighten={!DARK_MODELS.has(i)} />
               </Suspense>
             </ModelErrorBoundary>
           </group>
@@ -200,8 +222,7 @@ export default function HeroScene() {
         <div className={styles.textRight}>
           <p className={styles.tagline}>Where the missing becomes visible</p>
           <p className={styles.description}>
-            An AR rehabilitation system combining real-time 3D rendering,
-            motion tracking and voice control to treat phantom limb pain.
+            An AR system combining real-time 3D rendering, motion tracking and voice control - for those living with phantom limb pain, and those who've never had a limb but want to experience one.
           </p>
         </div>
       </div>
