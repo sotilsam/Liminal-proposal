@@ -4,6 +4,7 @@ import ProductCards from './components/ProductCards'
 import RationaleSection from './components/RationaleSection'
 import Architecture from './components/Architecture'
 import AppFlow from './components/AppFlow'
+import Demonstration from './components/Demonstration'
 import Footer from './components/Footer'
 import styles from './App.module.css'
 
@@ -109,6 +110,7 @@ export default function App() {
       />
       <Architecture />
       <AppFlow />
+      <Demonstration />
       <Footer />
     </main>
   )

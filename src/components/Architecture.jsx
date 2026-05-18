@@ -97,7 +97,7 @@ export default function Architecture() {
       title: 'אפליקציית ווב — דפדפן',
       cx: 390,
       boxes: [
-        { label: 'פורטל מטופל', sub: 'הרשמה - גפה - אימון', color: PURPLE },
+        { label: 'פורטל מטופל', sub: 'הרשמה - בחירת גפה - אימון ', color: PURPLE },
         { label: 'מצלמה חיה + תלת-ממד', sub: 'WebGL - שכבת גוף - קלט', color: TEAL },
         { label: 'תצוגת מטפל', sub: 'מעקב התקדמות', color: PURPLE },
       ]
@@ -109,7 +109,7 @@ export default function Architecture() {
         { label: 'מעקב גוף', sub: 'MediaPipe / Pose', color: TEAL },
         { label: 'ניהול סשן', sub: 'זרימת תרגילים', color: TEAL },
         { label: 'בקרת קול', sub: 'דיבור + תנועה', color: TEAL },
-        { label: 'מעקב כאב', sub: 'סולם VAS ויומנים', color: TEAL },
+        { label: 'מעקב כאב', sub: 'ויומני מעקב VAS סולם', color: TEAL },
       ]
     },
     {
@@ -126,9 +126,9 @@ export default function Architecture() {
       title: 'שירותים חיצוניים',
       cx: 1140,
       boxes: [
-        { label: 'הסקת ML', sub: 'הערכת תנוחה', color: BEIGE },
+        { label: ' ML הסקת', sub: 'הערכת תנוחה', color: BEIGE },
         { label: 'Speech API', sub: 'פקודות קוליות', color: BEIGE },
-        { label: 'אחסון ענן', sub: 'מודלים וקליפים', color: BEIGE },
+        { label: 'אחסון ענן', sub: 'העדפות', color: BEIGE },
         { label: 'Auth & IAM', sub: 'מטופל ומטפל', color: BEIGE },
       ]
     }
@@ -148,7 +148,7 @@ export default function Architecture() {
         }
       })
 
-      gsap.fromTo(cols, 
+      gsap.fromTo(cols,
         { opacity: 0, x: -20 },
         {
           opacity: 1, x: 0,
@@ -223,7 +223,7 @@ export default function Architecture() {
             {/* Render arrows between columns */}
             {[0, 1, 2, 3].map(i => {
               const x1 = columns[i].cx + 115
-              const x2 = columns[i+1].cx - 115
+              const x2 = columns[i + 1].cx - 115
               return (
                 <g key={`arrow-${i}`} className="arch-arrow">
                   <Arrow x1={x1} y1={196} x2={x2} y2={196} />

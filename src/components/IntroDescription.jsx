@@ -36,7 +36,7 @@ export default function IntroDescription() {
     <section id="section-01" className={styles.section}>
       <div className={styles.sectionNumber}>01</div>
       <div className={styles.inner}>
-        <h2 className={styles.heading}>Interface Description</h2>
+        <h2 className={styles.heading}>הגדרת מוצר </h2>
         <p
           ref={textRef}
           className={styles.body}

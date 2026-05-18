@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mirror Motion — AR + MediaPipe</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, sans-serif;
+  background: #0d1b2a; color: #fff;
+  display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; padding: 12px;
+}
+.topbar {
+  width: 100%; max-width: 780px;
+  background: #0097A7; border-radius: 12px 12px 0 0;
+  padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+}
+.topbar-title { color: #fff; font-size: 15px; font-weight: bold; }
+.status { color: rgba(255,255,255,0.8); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; }
+.dot.green { background: #4CAF50; animation: blink 1.5s infinite; }
+.dot.yellow { background: #FF9800; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.ar-box {
+  width: 100%; max-width: 780px; background: #111;
+  position: relative; min-height: 360px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+#video { width: 100%; display: block; transform: scaleX(-1); max-height: 480px; object-fit: cover; }
+#canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.nocam {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; padding: 40px 20px; text-align: center;
+}
+.nocam p { color: rgba(255,255,255,0.5); font-size: 14px; line-height: 1.7; }
+.nocam-icon { font-size: 48px; opacity: 0.2; }
+
+.loading-bar-wrap {
+  width: 80%; max-width: 300px; height: 4px;
+  background: rgba(255,255,255,0.1); border-radius: 20px; overflow: hidden; display: none;
+}
+.loading-bar { height: 100%; background: #0097A7; border-radius: 20px; width: 0%; transition: width 0.3s; }
+.loading-text { font-size: 11px; color: rgba(255,255,255,0.4); display: none; }
+
+.overlay-badge {
+  position: absolute; top: 10px; right: 12px;
+  background: rgba(0,151,167,0.85); color: #fff;
+  font-size: 11px; padding: 3px 10px; border-radius: 20px; display: none;
+}
+.ar-timer {
+  position: absolute; top: 10px; left: 12px;
+  background: rgba(0,0,0,0.6); color: #fff;
+  font-size: 13px; font-weight: bold; padding: 3px 10px; border-radius: 20px; display: none;
+}
+.skel-badge {
+  position: absolute; top: 38px; right: 12px;
+  background: rgba(20,150,80,0.8); color: #fff;
+  font-size: 10px; padding: 2px 8px; border-radius: 20px; display: none;
+}
+
+.ex-panel {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.78); border: 1px solid rgba(0,151,167,0.5);
+  border-radius: 10px; padding: 10px 16px; min-width: 220px;
+  display: none; flex-direction: column; gap: 5px; z-index: 15;
+}
+.ex-name { font-size: 14px; font-weight: bold; color: #fff; }
+.ex-desc { font-size: 11px; color: rgba(255,255,255,0.6); }
+.ex-reps { font-size: 11px; color: #0097A7; }
+.ex-prog-bg { height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-top: 4px; }
+.ex-prog-fill { height: 100%; background: #0097A7; width: 0%; transition: width 0.9s linear; border-radius: 10px; }
+
+.arrow-el {
+  position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%);
+  font-size: 68px; color: rgba(0,220,180,0.92);
+  text-shadow: 0 0 24px rgba(0,200,180,0.7);
+  pointer-events: none; display: none; z-index: 10;
+  animation: arrowPulse 1s ease-in-out infinite;
+}
+@keyframes arrowPulse {
+  0%,100%{transform:translateX(-50%) scale(1)}
+  50%{transform:translateX(-50%) scale(1.15)}
+}
+.feedback-el {
+  position: absolute; top: 38%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 24px; font-weight: bold; pointer-events: none; display: none; z-index: 20;
+}
+
+.controls {
+  width: 100%; max-width: 780px; background: #1a2535;
+  border-radius: 0 0 12px 12px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lbl { font-size: 11px; color: rgba(255,255,255,0.45); white-space: nowrap; }
+.swatch {
+  width: 22px; height: 22px; border-radius: 50%;
+  cursor: pointer; border: 2px solid transparent; transition: all 0.15s;
+}
+.swatch.on { border-color: #fff; transform: scale(1.2); }
+.pill {
+  padding: 4px 12px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 12px; cursor: pointer;
+  background: rgba(255,255,255,0.07); color: #fff; transition: all 0.15s;
+}
+.pill.on { background: #0097A7; border-color: #0097A7; }
+.vcbar {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;
+}
+.vc {
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08); color: #fff;
+  font-size: 11px; cursor: pointer; transition: all 0.2s;
+}
+.vc:hover { background: rgba(0,151,167,0.5); }
+.vc.lit { background: #0097A7; border-color: #0097A7; }
+.pain-wrap { display: flex; align-items: center; gap: 4px; margin-right: auto; }
+.pd { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; }
+.big-btn {
+  padding: 10px 22px; border-radius: 8px; border: none;
+  font-size: 14px; font-weight: bold; cursor: pointer; color: #fff;
+  background: #0097A7; transition: opacity 0.15s;
+}
+.big-btn:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">👁 Mirror Motion — AR + MediaPipe</div>
+  <div class="status">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">ממתין</span>
+  </div>
+</div>
+
+<div class="ar-box" id="arBox">
+  <div class="nocam" id="nocam">
+    <div class="nocam-icon">📷</div>
+    <p>לחצי להפעלת AR<br><small style="font-size:11px;opacity:0.5">MediaPipe יזהה את גופך ויצמיד את הגפה</small></p>
+    <button class="big-btn" id="openBtn">הפעלי AR</button>
+    <div class="loading-bar-wrap" id="loadBar"><div class="loading-bar" id="loadFill"></div></div>
+    <div class="loading-text" id="loadText">טוען מודל MediaPipe...</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:4px">המידע לא נשמר</div>
+  </div>
+  <video id="video" autoplay playsinline muted style="display:none"></video>
+  <canvas id="canvas"></canvas>
+  <div class="overlay-badge" id="arBadge">⚡ AR פעיל</div>
+  <div class="ar-timer" id="timer">00:00</div>
+  <div class="skel-badge" id="skelBadge">✓ גוף זוהה</div>
+  <div class="ex-panel" id="exPanel">
+    <div class="ex-name" id="exName">לחצי "הבא" להתחלה</div>
+    <div class="ex-desc" id="exDesc">5 תרגילים מוכנים</div>
+    <div class="ex-reps" id="exReps"></div>
+    <div class="ex-prog-bg"><div class="ex-prog-fill" id="exFill"></div></div>
+  </div>
+  <div class="arrow-el" id="arrowEl"></div>
+  <div class="feedback-el" id="feedEl"></div>
+</div>
+
+<div class="controls">
+  <div class="row">
+    <span class="lbl">גפה:</span>
+    <div class="pill on" data-limb="right_leg_below">רגל ימין — מתחת לברך</div>
+    <div class="pill" data-limb="right_leg_above">רגל ימין — מעל לברך</div>
+    <div class="pill" data-limb="left_leg_below">רגל שמאל — מתחת לברך</div>
+    <div class="pill" data-limb="left_leg_above">רגל שמאל — מעל לברך</div>
+    <div class="pill" data-limb="right_arm_below">יד ימין — מתחת למרפק</div>
+    <div class="pill" data-limb="right_arm_above">יד ימין — מעל למרפק</div>
+    <div class="pill" data-limb="left_arm_below">יד שמאל — מתחת למרפק</div>
+    <div class="pill" data-limb="left_arm_above">יד שמאל — מעל למרפק</div>
+  </div>
+  <div class="row">
+    <span class="lbl">צבע:</span>
+    <div class="swatch on" data-color="#00BCD4" style="background:#00BCD4"></div>
+    <div class="swatch" data-color="#9C27B0" style="background:#9C27B0"></div>
+    <div class="swatch" data-color="#4CAF50" style="background:#4CAF50"></div>
+    <div class="swatch" data-color="#FF5722" style="background:#FF5722"></div>
+    <div class="swatch" data-color="#E91E63" style="background:#E91E63"></div>
+    <div class="swatch" data-color="rgba(210,180,150,0.95)" style="background:rgba(210,180,150,0.95)"></div>
+    <span class="lbl" style="margin-right:8px">סגנון:</span>
+    <div class="pill on" data-style="natural">טבעי</div>
+    <div class="pill" data-style="prosthetic">פרוטזה</div>
+    <div class="pill" data-style="bionic">ביוני</div>
+  </div>
+  <div class="vcbar">
+    <span>🎤</span>
+    <button class="vc" id="vcStop">עצור</button>
+    <button class="vc" id="vcNext">הבא</button>
+    <button class="vc" id="vcBack">חזור</button>
+    <div class="pain-wrap">
+      <span class="lbl">כאב:</span>
+      <div class="pd" id="pd1"></div><div class="pd" id="pd2"></div>
+      <div class="pd" id="pd3"></div><div class="pd" id="pd4"></div>
+      <div class="pd" id="pd5"></div>
+      <span id="painVal" style="font-size:10px;color:rgba(255,255,255,0.4)">0/5</span>
+    </div>
+    <button class="vc" id="closeBtn" style="margin-right:auto;border-color:rgba(255,100,100,0.4)">✕ סגור</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+<script>
+var video   = document.getElementById('video');
+var canvas  = document.getElementById('canvas');
+var ctx     = canvas.getContext('2d');
+var nocam   = document.getElementById('nocam');
+var timerEl = document.getElementById('timer');
+var arBadge = document.getElementById('arBadge');
+var skelBadge = document.getElementById('skelBadge');
+var arrowEl = document.getElementById('arrowEl');
+var feedEl  = document.getElementById('feedEl');
+var exPanel = document.getElementById('exPanel');
+var exName  = document.getElementById('exName');
+var exDesc  = document.getElementById('exDesc');
+var exRepsEl= document.getElementById('exReps');
+var exFill  = document.getElementById('exFill');
+var loadBar = document.getElementById('loadBar');
+var loadFill= document.getElementById('loadFill');
+var loadText= document.getElementById('loadText');
+
+var limbColor = '#00BCD4';
+var limbStyle = 'natural';
+var limbType  = 'right_leg_below';
+var camActive = false;
+var stream    = null;
+var pose      = null;
+var mpCamera  = null;
+var timerId   = null;
+var timerSecs = 0;
+var landmarks = null;
+var skelDetected = false;
+
+// Exercise state
+var exercises = [
+  { name:'הרמת גפה',    desc:'הרמי את הגפה למעלה לאט ובשליטה', arrow:'↑', dur:8, reps:5 },
+  { name:'כיפוף ברך',   desc:'כפיפי את הברך לאחור ל-90 מעלות',  arrow:'↩', dur:6, reps:8 },
+  { name:'מעגלים',      desc:'בצעי מעגלים עם הגפה בכיוון השעון', arrow:'↻', dur:10,reps:3 },
+  { name:'הרחקה צידית', desc:'הרחיקי את הגפה הצידה ב-45 מעלות', arrow:'→', dur:7, reps:6 },
+  { name:'נחיתה רכה',   desc:'הורידי את הגפה לאט עד לנגיעה',    arrow:'↓', dur:8, reps:5 },
+];
+var exIdx=0, exProg=0, exReps=0, exActive=false, exInt=null;
+
+// MediaPipe landmark indices
+var LANDMARKS = {
+  r_shoulder:12, l_shoulder:11,
+  r_elbow:14,    l_elbow:13,
+  r_wrist:16,    l_wrist:15,
+  r_hip:24,      l_hip:23,
+  r_knee:26,     l_knee:25,
+  r_ankle:28,    l_ankle:27,
+};
+
+function lm(key) {
+  if (!landmarks) return null;
+  var idx = LANDMARKS[key];
+  if (idx === undefined || !landmarks[idx]) return null;
+  var p = landmarks[idx];
+  if (p.visibility < 0.3) return null;
+  return { x: (1 - p.x) * canvas.width, y: p.y * canvas.height };
+}
+
+// ===== INIT =====
+document.getElementById('openBtn').addEventListener('click', startAR);
+document.getElementById('closeBtn').addEventListener('click', stopAR);
+document.getElementById('vcNext').addEventListener('click', function(){ vcCmd('next'); });
+document.getElementById('vcStop').addEventListener('click', function(){ vcCmd('stop'); });
+document.getElementById('vcBack').addEventListener('click', function(){ vcCmd('back'); });
+
+document.querySelectorAll('.pill[data-limb]').forEach(function(el) {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('.pill[data-limb]').forEach(function(x){ x.classList.remove('on'); });
+    el.classList.add('on'); limbType = el.dataset.limb;
+  });
+});
+document.querySelectorAll('.pill[data-style]').forEach(function(el) {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('.pill[data-style]').forEach(function(x){ x.classList.remove('on'); });
+    el.classList.add('on'); limbStyle = el.dataset.style;
+  });
+});
+document.querySelectorAll('.swatch').forEach(function(el) {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('.swatch').forEach(function(x){ x.classList.remove('on'); });
+    el.classList.add('on'); limbColor = el.dataset.color;
+  });
+});
+for (var i=1; i<=5; i++) {
+  (function(n){ document.getElementById('pd'+n).addEventListener('click', function(){ setPain(n); }); })(i);
+}
+
+// ===== AR START =====
+function startAR() {
+  setStatus('טוען MediaPipe...', 'yellow');
+  loadBar.style.display = 'block';
+  loadText.style.display = 'block';
+  document.getElementById('openBtn').disabled = true;
+  document.getElementById('openBtn').textContent = 'טוען...';
+
+  animateLoad();
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:{ideal:1280}, height:{ideal:720} }, audio: false })
+    .then(function(s) {
+      stream = s;
+      video.srcObject = s;
+      video.style.display = 'block';
+
+      pose = new Pose({ locateFile: function(f) {
+        return 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/' + f;
+      }});
+      pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+      pose.onResults(onPoseResults);
+
+      mpCamera = new Camera(video, {
+        onFrame: async function() {
+          if (camActive) await pose.send({ image: video });
+        },
+        width: 1280, height: 720,
+      });
+
+      mpCamera.start().then(function() {
+        camActive = true;
+        nocam.style.display = 'none';
+        loadBar.style.display = 'none';
+        loadText.style.display = 'none';
+        timerEl.style.display = 'block';
+        arBadge.style.display = 'block';
+        exPanel.style.display = 'flex';
+        canvas.width  = video.videoWidth  || 1280;
+        canvas.height = video.videoHeight || 720;
+        startTimer();
+        setStatus('AR פעיל — ממתין לזיהוי גוף', true);
+      }).catch(function(e) {
+        showError('שגיאה בהפעלת MediaPipe: ' + e.message);
+      });
+    })
+    .catch(function(e) {
+      showError('לא ניתן לפתוח מצלמה: ' + e.message);
+    });
+}
+
+var loadAnim = null;
+var loadPct  = 0;
+function animateLoad() {
+  loadPct = 0;
+  loadAnim = setInterval(function() {
+    loadPct = Math.min(loadPct + 1.5, 90);
+    loadFill.style.width = loadPct + '%';
+    if (loadPct < 30) loadText.textContent = 'טוען מודל MediaPipe...';
+    else if (loadPct < 60) loadText.textContent = 'מאתחל זיהוי תנוחה...';
+    else loadText.textContent = 'מחכה למצלמה...';
+    if (loadPct >= 90) clearInterval(loadAnim);
+  }, 80);
+}
+
+function showError(msg) {
+  document.getElementById('openBtn').disabled = false;
+  document.getElementById('openBtn').textContent = 'נסי שוב';
+  loadBar.style.display = 'none';
+  loadText.style.display = 'none';
+  loadText.textContent = '';
+  clearInterval(loadAnim);
+  alert(msg);
+  setStatus('שגיאה', false);
+}
+
+function stopAR() {
+  camActive = false;
+  if (mpCamera) { mpCamera.stop(); mpCamera = null; }
+  if (stream)   { stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  clearInterval(timerId); timerId = null;
+  clearInterval(exInt);   exInt = null; exActive = false;
+  video.style.display = 'none'; video.srcObject = null;
+  nocam.style.display = 'flex';
+  timerEl.style.display = 'none';
+  arBadge.style.display = 'none';
+  skelBadge.style.display = 'none';
+  arrowEl.style.display  = 'none';
+  exPanel.style.display  = 'none';
+  document.getElementById('openBtn').disabled = false;
+  document.getElementById('openBtn').textContent = 'הפעלי AR';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  landmarks = null; skelDetected = false;
+  setStatus('ממתין', false);
+}
+
+// ===== POSE RESULTS =====
+function onPoseResults(results) {
+  canvas.width  = results.image.width;
+  canvas.height = results.image.height;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (results.poseLandmarks && results.poseLandmarks.length > 0) {
+    landmarks = results.poseLandmarks;
+    if (!skelDetected) {
+      skelDetected = true;
+      skelBadge.style.display = 'block';
+      setStatus('גוף זוהה · AR פעיל', true);
+    }
+    drawVirtualLimb();
+  } else {
+    landmarks = null;
+    if (skelDetected) {
+      skelDetected = false;
+      skelBadge.style.display = 'none';
+      setStatus('AR פעיל — ממתין לזיהוי גוף', true);
+    }
+  }
+}
+
+// ===== DRAW VIRTUAL LIMB =====
+function drawVirtualLimb() {
+  if (!landmarks) return;
+  var w = canvas.width, h = canvas.height;
+  var col = limbColor;
+  ctx.save();
+  ctx.globalAlpha = 0.82;
+
+  var side = limbType.startsWith('right') ? 'r' : 'l';
+  var isLeg = limbType.includes('leg');
+  var isBelow = limbType.includes('below');
+
+  if (isLeg) {
+    var hip   = lm(side + '_hip');
+    var knee  = lm(side + '_knee');
+    var ankle = lm(side + '_ankle');
+
+    if (isBelow) {
+      // Amputation below knee: draw from knee downward
+      if (!knee) { ctx.restore(); return; }
+      // Estimate ankle position if not visible (below amputation point)
+      var legDir = estimateLegDirection(hip, knee, w, h);
+      var legLen = knee && hip ? dist(hip, knee) : h * 0.18;
+      var startPt = knee;
+      var endPt = {
+        x: knee.x + legDir.x * legLen * 0.85,
+        y: knee.y + legDir.y * legLen * 0.85,
+      };
+      var footPt = {
+        x: endPt.x + legDir.x * legLen * 0.12,
+        y: endPt.y + legDir.y * legLen * 0.12,
+      };
+      drawLegSegment(ctx, startPt, endPt, footPt, col, w);
+    } else {
+      // Amputation above knee: draw from hip downward
+      if (!hip) { ctx.restore(); return; }
+      var legDir2 = { x: 0, y: 1 };
+      if (knee && hip) { legDir2 = normalize({ x: knee.x-hip.x, y: knee.y-hip.y }); }
+      var seg = hip && knee ? dist(hip, knee) : h * 0.18;
+      var kneePt = { x: hip.x + legDir2.x * seg, y: hip.y + legDir2.y * seg };
+      var anklePt = { x: kneePt.x + legDir2.x * seg * 0.9, y: kneePt.y + legDir2.y * seg * 0.9 };
+      var footPt2 = { x: anklePt.x + legDir2.x * seg * 0.12, y: anklePt.y + legDir2.y * seg * 0.12 };
+      // Draw full leg from hip
+      drawThighSegment(ctx, hip, kneePt, col, w);
+      drawLegSegment(ctx, kneePt, anklePt, footPt2, col, w);
+    }
+  } else {
+    // ARM
+    var shoulder = lm(side + '_shoulder');
+    var elbow    = lm(side + '_elbow');
+    var wrist    = lm(side + '_wrist');
+
+    if (isBelow) {
+      // Amputation below elbow: draw from elbow downward
+      if (!elbow) { ctx.restore(); return; }
+      var armDir = estimateArmDirection(shoulder, elbow, w, h);
+      var armLen = elbow && shoulder ? dist(shoulder, elbow) : h * 0.14;
+      var wristPt = { x: elbow.x + armDir.x * armLen * 0.85, y: elbow.y + armDir.y * armLen * 0.85 };
+      var handPt  = { x: wristPt.x + armDir.x * armLen * 0.12, y: wristPt.y + armDir.y * armLen * 0.12 };
+      drawArmSegment(ctx, elbow, wristPt, handPt, col, w);
+    } else {
+      // Amputation above elbow: draw from shoulder downward
+      if (!shoulder) { ctx.restore(); return; }
+      var armDir2 = { x: 0, y: 1 };
+      if (elbow && shoulder) { armDir2 = normalize({ x: elbow.x-shoulder.x, y: elbow.y-shoulder.y }); }
+      var armSeg = shoulder && elbow ? dist(shoulder, elbow) : h * 0.14;
+      var elbowPt  = { x: shoulder.x + armDir2.x * armSeg, y: shoulder.y + armDir2.y * armSeg };
+      var wristPt2 = { x: elbowPt.x + armDir2.x * armSeg * 0.85, y: elbowPt.y + armDir2.y * armSeg * 0.85 };
+      var handPt2  = { x: wristPt2.x + armDir2.x * armSeg * 0.12, y: wristPt2.y + armDir2.y * armSeg * 0.12 };
+      drawUpperArmSegment(ctx, shoulder, elbowPt, col, w);
+      drawArmSegment(ctx, elbowPt, wristPt2, handPt2, col, w);
+    }
+  }
+
+  ctx.restore();
+}
+
+// ===== GEOMETRY HELPERS =====
+function dist(a, b) { return Math.sqrt((b.x-a.x)**2 + (b.y-a.y)**2); }
+function normalize(v) { var l=Math.sqrt(v.x*v.x+v.y*v.y)||1; return {x:v.x/l,y:v.y/l}; }
+
+function estimateLegDirection(hip, knee, w, h) {
+  if (hip && knee) return normalize({ x: knee.x-hip.x, y: knee.y-hip.y });
+  return { x: 0, y: 1 };
+}
+
+function estimateArmDirection(shoulder, elbow, w, h) {
+  if (shoulder && elbow) return normalize({ x: elbow.x-shoulder.x, y: elbow.y-shoulder.y });
+  return { x: 0, y: 1 };
+}
+
+function drawThighSegment(ctx, top, bottom, col, w) {
+  var tw = Math.max(w * 0.030, 14);
+  var bw = Math.max(w * 0.024, 10);
+  ctx.fillStyle = col;
+  if (limbStyle === 'bionic') {
+    ctx.strokeStyle=col; ctx.lineWidth=4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(top.x,top.y); ctx.lineTo(bottom.x,bottom.y); ctx.stroke();
+    ctx.beginPath(); ctx.arc(top.x,top.y,7,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+    ctx.beginPath(); ctx.arc(bottom.x,bottom.y,7,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(top.x,top.y,3,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    ctx.beginPath(); ctx.arc(bottom.x,bottom.y,3,0,Math.PI*2); ctx.fill();
+  } else if (limbStyle === 'prosthetic') {
+    rr(ctx,top.x-tw,top.y,tw*2,bottom.y-top.y,5); ctx.fill();
+  } else {
+    var mid = { x:(top.x+bottom.x)/2, y:(top.y+bottom.y)/2 };
+    ctx.beginPath();
+    ctx.moveTo(top.x-tw,top.y);
+    ctx.quadraticCurveTo(mid.x-tw*1.2,mid.y, bottom.x-bw,bottom.y);
+    ctx.lineTo(bottom.x+bw,bottom.y);
+    ctx.quadraticCurveTo(mid.x+tw*1.2,mid.y, top.x+tw,top.y);
+    ctx.closePath(); ctx.fill();
+  }
+  drawGlow(ctx, top, bottom, col, w, 0.06);
+}
+
+function drawLegSegment(ctx, knee, ankle, foot, col, w) {
+  var cw = Math.max(w * 0.022, 10);
+  ctx.fillStyle = col;
+  if (limbStyle === 'bionic') {
+    ctx.strokeStyle=col; ctx.lineWidth=3; ctx.lineCap='round'; ctx.setLineDash([7,4]);
+    ctx.beginPath(); ctx.moveTo(knee.x,knee.y); ctx.lineTo(ankle.x,ankle.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(knee.x,knee.y,6,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+    ctx.beginPath(); ctx.arc(ankle.x,ankle.y,5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(knee.x,knee.y,3,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(foot.x,foot.y,12,5,0,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+  } else if (limbStyle === 'prosthetic') {
+    rr(ctx,knee.x-cw,knee.y,cw*2,ankle.y-knee.y,5); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(foot.x,foot.y+6,cw*1.4,6,0,0,Math.PI*2); ctx.fill();
+  } else {
+    var mid = { x:(knee.x+ankle.x)/2, y:(knee.y+ankle.y)/2 };
+    ctx.beginPath();
+    ctx.moveTo(knee.x-cw,knee.y);
+    ctx.quadraticCurveTo(mid.x-cw*1.2,mid.y, ankle.x-cw*0.8,ankle.y);
+    ctx.lineTo(ankle.x+cw*0.8,ankle.y);
+    ctx.quadraticCurveTo(mid.x+cw*1.2,mid.y, knee.x+cw,knee.y);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(foot.x,foot.y+7,cw*1.3,7,0,0,Math.PI*2); ctx.fill();
+  }
+  drawGlow(ctx, knee, ankle, col, w, 0.05);
+}
+
+function drawUpperArmSegment(ctx, shoulder, elbow, col, w) {
+  var aw = Math.max(w * 0.022, 10);
+  ctx.fillStyle = col;
+  if (limbStyle === 'bionic') {
+    ctx.strokeStyle=col; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(shoulder.x,shoulder.y); ctx.lineTo(elbow.x,elbow.y); ctx.stroke();
+    [shoulder,elbow].forEach(function(p){
+      ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+    });
+  } else {
+    drawArmPoly(ctx, shoulder, elbow, aw, aw*0.85, col);
+  }
+  drawGlow(ctx, shoulder, elbow, col, w, 0.04);
+}
+
+function drawArmSegment(ctx, elbow, wrist, hand, col, w) {
+  var aw = Math.max(w * 0.018, 8);
+  ctx.fillStyle = col;
+  if (limbStyle === 'bionic') {
+    ctx.strokeStyle=col; ctx.lineWidth=3; ctx.lineCap='round'; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(elbow.x,elbow.y); ctx.lineTo(wrist.x,wrist.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(elbow.x,elbow.y,5,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hand.x,hand.y,10,5,0,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+  } else {
+    drawArmPoly(ctx, elbow, wrist, aw, aw*0.7, col);
+    ctx.beginPath(); ctx.ellipse(hand.x,hand.y+6,aw*1.2,7,0,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+  }
+  drawGlow(ctx, elbow, wrist, col, w, 0.04);
+}
+
+function drawArmPoly(ctx, p1, p2, w1, w2, col) {
+  var dx=p2.x-p1.x, dy=p2.y-p1.y;
+  var len=Math.sqrt(dx*dx+dy*dy)||1;
+  var nx=-dy/len, ny=dx/len;
+  ctx.fillStyle=col;
+  ctx.beginPath();
+  ctx.moveTo(p1.x-nx*w1,p1.y-ny*w1);
+  ctx.lineTo(p2.x-nx*w2,p2.y-ny*w2);
+  ctx.lineTo(p2.x+nx*w2,p2.y+ny*w2);
+  ctx.lineTo(p1.x+nx*w1,p1.y+ny*w1);
+  ctx.closePath(); ctx.fill();
+}
+
+function drawGlow(ctx, a, b, col, w, factor) {
+  ctx.save();
+  ctx.globalAlpha=0.15; ctx.fillStyle=col; ctx.filter='blur(14px)';
+  var cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+  var len=dist(a,b);
+  ctx.fillRect(cx-w*factor, a.y, w*factor*2, len+24);
+  ctx.filter='none';
+  ctx.restore();
+}
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+}
+
+// ===== TIMER =====
+function startTimer() {
+  timerSecs = 0;
+  timerId = setInterval(function() {
+    timerSecs++;
+    var m = Math.floor(timerSecs/60).toString().padStart(2,'0');
+    var s = (timerSecs%60).toString().padStart(2,'0');
+    timerEl.textContent = m+':'+s;
+  }, 1000);
+}
+
+// ===== EXERCISES =====
+function startExercise(idx) {
+  if (exInt) clearInterval(exInt);
+  exIdx=idx; exProg=0; exReps=0; exActive=true;
+  var ex = exercises[idx];
+  exName.textContent = ex.name;
+  exDesc.textContent = ex.desc;
+  exRepsEl.textContent = '0/'+ex.reps;
+  exFill.style.width='0%'; exFill.style.background='#0097A7';
+  arrowEl.textContent = ex.arrow; arrowEl.style.display='block';
+  exPanel.style.display = 'flex';
+
+  exInt = setInterval(function() {
+    exProg++;
+    exFill.style.width = Math.round((exProg/ex.dur)*100)+'%';
+    if (exProg >= ex.dur) {
+      exReps++; exProg=0;
+      exRepsEl.textContent = exReps+'/'+ex.reps;
+      showFeedback(exReps>=ex.reps?'✓ מעולה! תרגיל הושלם':'✓ חזרה '+exReps, exReps>=ex.reps?'#4CAF50':'#00BCD4');
+      if (exReps >= ex.reps) {
+        clearInterval(exInt);
+        setTimeout(function(){ exIdx<exercises.length-1?startExercise(exIdx+1):endExercises(); }, 1200);
+      }
+    }
+  }, 1000);
+}
+
+function endExercises() {
+  exActive=false; arrowEl.style.display='none';
+  exName.textContent='✓ אימון הושלם!';
+  exDesc.textContent='כל '+exercises.length+' התרגילים בוצעו';
+  exFill.style.width='100%'; exFill.style.background='#4CAF50';
+}
+
+function showFeedback(text, color) {
+  feedEl.textContent=text; feedEl.style.color=color;
+  feedEl.style.display='block';
+  feedEl.style.animation='none'; feedEl.offsetHeight;
+  feedEl.style.animation='fadeup 1.2s ease forwards';
+  setTimeout(function(){ feedEl.style.display='none'; }, 1200);
+}
+
+// ===== VOICE CONTROLS =====
+function vcCmd(cmd) {
+  var ids = {stop:'vcStop', next:'vcNext', back:'vcBack'};
+  var el = document.getElementById(ids[cmd]);
+  if (el) { el.classList.add('lit'); setTimeout(function(){ el.classList.remove('lit'); },900); }
+  if (cmd==='stop') {
+    clearInterval(exInt); exInt=null; exActive=false;
+    clearInterval(timerId); timerId=null;
+    arrowEl.style.display='none';
+  }
+  if (cmd==='next') {
+    if (!exActive) { startExercise(0); if(!timerId) startTimer(); }
+    else if (exIdx<exercises.length-1) startExercise(exIdx+1);
+  }
+  if (cmd==='back' && exIdx>0) startExercise(exIdx-1);
+}
+
+// ===== PAIN =====
+function setPain(n) {
+  for (var i=1;i<=5;i++) {
+    document.getElementById('pd'+i).style.background =
+      i<=n?(n<=2?'#4CAF50':n<=4?'#FF9800':'#F44336'):'rgba(255,255,255,0.2)';
+  }
+  document.getElementById('painVal').textContent=n+'/5';
+}
+
+// ===== STATUS =====
+function setStatus(text, state) {
+  document.getElementById('statusText').textContent=text;
+  var dot=document.getElementById('statusDot');
+  dot.className='dot'+(state==='yellow'?' yellow':state?' green':'');
+}
+
+// ===== FADEUP ANIMATION =====
+var style = document.createElement('style');
+style.textContent = '@keyframes fadeup{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-180%)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
